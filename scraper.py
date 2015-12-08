@@ -37,8 +37,9 @@ def _publish_pb_notification(city, result):
         raise Exception('Could not publish to pushbullet')
 
 
-def parse_city_page(event, context, city='copenhagen'):
+def parse_city_page(event, context):
     """Load the page and extract prayer times for the given city."""
+    city = event.get('city', 'copenhagen')
     result = []
     response = requests.get(CITIES_LINKS[city])
     if response.ok:
