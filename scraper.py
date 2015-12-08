@@ -1,6 +1,5 @@
 import json
 import requests
-import sys
 from bs4 import BeautifulSoup
 
 
@@ -12,23 +11,30 @@ CITIES_LINKS = {
 }
 
 
-def _trigger_ifttt_event(city, result):
-    """."""
-    ifttt_url = 'https://maker.ifttt.com/trigger/{}/with/key/{}'.format(
-        city,
-        sys.env.get('IFTTT_KEY')
-    )
+def _publish_pb_notification(city, result):
+    """Publish a notification to a pushbullet channel."""
+    config = {}
+    with open('config.json') as f:
+        config = json.load(f)
+
+    pb_url = 'https://api.pushbullet.com/v2/pushes'
     headers = {
         'Content-Type': 'application/json',
+        'Access-Token': config['ACCESS_TOKEN'],
     }
     data = {
-        'value1': ', '.join(result),
+        'type': 'note',
+        'title': 'Prayer times',
+        'body': ', '.join(result),
+        'channel_tag': 'salahdk-{}'.format(city),
     }
-    requests.post(
-        ifttt_url,
+    response = requests.post(
+        pb_url,
         data=json.dumps(data),
         headers=headers
     )
+    if not response.ok:
+        raise Exception('Could not publish to pushbullet')
 
 
 def parse_city_page(event, context, city='copenhagen'):
@@ -46,4 +52,4 @@ def parse_city_page(event, context, city='copenhagen'):
             )
             result.append(prayer_str)
 
-    _trigger_ifttt_event(city, result)
+    _publish_pb_notification(city, result)
